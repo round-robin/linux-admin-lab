@@ -1,7 +1,7 @@
 # A Vagrantfile for deploying a self-contained Linux training environment based on Rocky 9
 
 Vagrant.configure("2") do |config|
- config.vm.box = "rockylinux/9"
+ config.vm.box = "generic/rocky9"
  config.vm.synced_folder "./", "/vagrant"
 
   config.vm.define "server" do |server|
