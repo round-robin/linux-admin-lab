@@ -1,0 +1,44 @@
+---
+  - name: Configuration of the server machine for exam exercises
+    hosts: all
+    become: yes
+    gather_facts: yes
+    tasks:
+      - name: Install the NFS tools
+        package:
+          name: nfs-utils
+          state: present
+      
+      - name: Generate a randomized name for the NFS share
+        debug:
+          msg: "{{ range(1,99) | random }}"
+        register: nfs_suffix
+
+      - name: Create the NFS mountpoint
+        file:
+          path: /nfs{{nfs_suffix['msg']}}
+          mode: '777'
+          state: directory
+
+      - name: Create the exports file
+        template:
+          src: /vagrant/templates/exports.j2
+          dest: /etc/exports
+
+      - name: Start the NFS service
+        service:
+          name: nfs-server
+          enabled: yes
+          state: restarted
+
+      - name: Write the lab details to a file
+        blockinfile:
+          path: /home/vagrant/lab-config.txt
+          create: yes
+          block: |
+            Random share name: /nfs{{ nfs_suffix['msg'] }}
+
+      - name: Display the location of the lab details
+        debug:
+          msg: Please check the configuration details of the lab in /home/vagrant/lab-config.txt on machine 'server'
+          
