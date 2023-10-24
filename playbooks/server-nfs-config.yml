@@ -1,8 +1,8 @@
 ---
-  - name: Configuration of the server machine for exam exercises
+  - name: Configuration of NFS shares on the server machine
     hosts: all
     become: yes
-    gather_facts: yes
+    gather_facts: no
     tasks:
       - name: Install the NFS tools
         package:
@@ -14,13 +14,19 @@
           msg: "{{ range(1,99) | random }}"
         register: nfs_suffix
 
-      - name: Create the NFS mountpoint
+      - name: Create the NFS read-write mountpoint
         file:
           path: /nfs{{nfs_suffix['msg']}}
           mode: '777'
           state: directory
 
-      - name: Create the exports file
+      - name: Create the NFS read-only share mountpoint
+        file:
+          path: /nfs-ro{{nfs_suffix['msg']}}
+          mode: '777'
+          state: directory
+
+      - name: Create the /etc/exports file
         template:
           src: /vagrant/templates/exports.j2
           dest: /etc/exports
@@ -36,7 +42,9 @@
           path: /home/vagrant/lab-config.txt
           create: yes
           block: |
-            Random share name: /nfs{{ nfs_suffix['msg'] }}
+            Summary of the NFS configuration:
+              Random read-write share name: /nfs{{ nfs_suffix['msg'] }}
+              Random read-only share name: /nfs-ro{{ nfs_suffix['msg'] }}
 
       - name: Display the location of the lab details
         debug:

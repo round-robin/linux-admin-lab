@@ -26,7 +26,7 @@ Vagrant.configure("2") do |config|
     inline: "sudo yum install -y ansible"
 
     server.vm.provision "ansible_local" do |ansible|
-      ansible.playbook = "playbooks/server-config.yml"
+      ansible.playbook = "playbooks/server-nfs-config.yml"
     end
   end
 
