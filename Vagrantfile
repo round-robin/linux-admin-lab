@@ -28,6 +28,10 @@ Vagrant.configure("2") do |config|
     server.vm.provision "ansible_local" do |ansible|
       ansible.playbook = "playbooks/server-nfs-config.yml"
     end
+
+    server.vm.provision "ansible_local" do |ansible|
+      ansible.playbook = "playbooks/server-openldap-config.yml"
+    end
   end
 
   (1..1).each do |i|

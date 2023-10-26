@@ -1,0 +1,43 @@
+---
+  - name: Configure an OpenLDAP server for excercises 
+    hosts: all
+    become: yes
+    gather_facts: no
+    tasks:
+      - name: Install the server package and other tools
+        package:
+          name: 
+            - openldap-servers
+            - openldap-clients
+          state: installed
+
+      - name: Rename the domain to example.com
+        replace:
+          path: /usr/share/openldap-servers/slapd.ldif
+          regexp: my-domain
+          replace: example
+
+      - name: Purge the old config directory
+        shell: 
+          cmd: rm -rf /etc/openldap/slapd.d/*
+
+      - name: Import the new configuration
+        shell:
+          cmd: /sbin/slapadd -n 0 -F /etc/openldap/slapd.d -l /usr/share/openldap-servers/slapd.ldif
+
+      - name: Change the config ownership to the LDAP user
+        file:
+          path: /etc/openldap/slapd.d
+          owner: ldap
+          group: ldap
+          recurse: yes
+
+      - name: Enable and start the LDAP server
+        service:
+          name: slapd
+          enabled: yes
+          state: started
+
+
+
+
