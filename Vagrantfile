@@ -15,7 +15,7 @@ Vagrant.configure("2") do |config|
   server.vm.network "private_network", ip: "192.168.56.10"
 
     server.vm.provision "shell",
-    inline: "sudo /bin/bash /vagrant/generate-hosts.sh >> /etc/hosts"
+    inline: "sudo /bin/bash /vagrant/scripts/generate-hosts.sh >> /etc/hosts"
     server.vm.provision "shell",
     inline: "hostnamectl set-hostname server" 
 
@@ -42,7 +42,7 @@ Vagrant.configure("2") do |config|
    client.vm.network "private_network", ip: "192.168.56.#{i + 10}"
    client.vm.hostname = "cl#{i}"
    client.vm.provision "shell",
-   inline: "sudo /bin/bash /vagrant/generate-hosts.sh >> /etc/hosts"
+   inline: "sudo /bin/bash /vagrant/scripts/generate-hosts.sh >> /etc/hosts"
    end
  end  #Configure all hosts as Rocky 9
 end  #End of the whole config
