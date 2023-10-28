@@ -1,0 +1,4 @@
+dn: ou=groups,dc=example,dc=com
+objectClass: organizationalUnit
+objectClass: top
+ou: groups

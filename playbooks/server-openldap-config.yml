@@ -10,12 +10,38 @@
             - openldap-servers
             - openldap-clients
           state: installed
+      
+      - name: Copy the LDAP config template
+        copy:
+          src: /usr/share/openldap-servers/slapd.ldif
+          dest: /vagrant/files/slapd.ldif
 
       - name: Rename the domain to example.com
         replace:
-          path: /usr/share/openldap-servers/slapd.ldif
+          path: /vagrant/files/slapd.ldif
           regexp: my-domain
           replace: example
+
+      - name: Enable the COSINE schema
+        lineinfile:
+          path: /vagrant/files/slapd.ldif
+          line: 'include: file:///etc/openldap/schema/cosine.ldif'
+          insertafter: 'include: file:///etc/openldap/schema/core.ldif'
+          state: present
+
+      - name: Enable the NIS schema
+        lineinfile:
+          path: /vagrant/files/slapd.ldif
+          line: 'include: file:///etc/openldap/schema/nis.ldif'
+          insertafter: 'include: file:///etc/openldap/schema/cosine.ldif'
+          state: present
+
+      - name: Configure the LDAP Manager's password
+        lineinfile:
+          path: /vagrant/files/slapd.ldif
+          line: 'olcRootPW: secret'
+          insertafter: 'olcRootDN: cn=Manager,dc=example,dc=com'
+          state: present
 
       - name: Purge the old config directory
         shell: 
@@ -23,7 +49,7 @@
 
       - name: Import the new configuration
         shell:
-          cmd: /sbin/slapadd -n 0 -F /etc/openldap/slapd.d -l /usr/share/openldap-servers/slapd.ldif
+          cmd: /sbin/slapadd -n 0 -F /etc/openldap/slapd.d -l /vagrant/files/slapd.ldif
 
       - name: Change the config ownership to the LDAP user
         file:
@@ -38,6 +64,19 @@
           enabled: yes
           state: started
 
+      - name: Create the organization
+        shell:
+          cmd: ldapadd -x -D 'cn=Manager,dc=example,dc=com' -w secret -f /vagrant/files/organization.ldif
+      
+      - name: Create the containers
+        shell:
+          cmd: ldapadd -x -D 'cn=Manager,dc=example,dc=com' -w secret -f /vagrant/files/containers.ldif
 
+      - name: Create an LDAP user
+        shell:
+          cmd: ldapadd -x -D 'cn=Manager,dc=example,dc=com' -w secret -f /vagrant/files/ldapuser.ldif
 
+      - name: Set the LDAP user's password
+        shell:
+          cmd: ldappasswd -s linux123 -D 'cn=Manager,dc=example,dc=com' -w secret -x 'uid=ldapuser,ou=users,dc=example,dc=com'
 
