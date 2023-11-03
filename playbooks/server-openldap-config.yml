@@ -80,3 +80,10 @@
         shell:
           cmd: ldappasswd -s linux123 -D 'cn=Manager,dc=example,dc=com' -w secret -x 'uid=ldapuser,ou=users,dc=example,dc=com'
 
+      - name: Open the firewall port 389 for LDAP
+        firewalld:
+          service: ldap
+          permanent: yes
+          immediate: yes
+          state: enabled
+
