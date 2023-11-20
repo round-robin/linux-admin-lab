@@ -2,6 +2,7 @@
 
 Vagrant.configure("2") do |config|
  config.vm.box = "generic/rocky9"
+# config.vm.box_version = "4.3.4"
  config.vm.synced_folder "./", "/vagrant"
 
   config.vm.define "server" do |server|
@@ -29,6 +30,10 @@ Vagrant.configure("2") do |config|
       ansible.playbook = "playbooks/server-nfs-config.yml"
     end
 
+    server.vm.provision "ansible_local" do |ansible|
+      ansible.playbook = "playbooks/server-lab-ca-config.yml"
+    end
+    
     server.vm.provision "ansible_local" do |ansible|
       ansible.playbook = "playbooks/server-openldap-config.yml"
     end
