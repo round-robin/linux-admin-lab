@@ -6,7 +6,7 @@
     tasks:
       - name: Install the NFS tools
         package:
-          name: nfs-utils
+          name: nfs-kernel-server
           state: present
       
       - name: Generate a randomized name for the NFS share

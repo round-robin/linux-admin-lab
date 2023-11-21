@@ -1,7 +1,8 @@
 # A Vagrantfile for deploying a self-contained Linux training environment based on Rocky 9
 
 Vagrant.configure("2") do |config|
- config.vm.box = "generic/rocky9"
+ config.vm.box = "generic/debian12"
+# Pin to a specific version, if needed
 # config.vm.box_version = "4.3.4"
  config.vm.synced_folder "./", "/vagrant"
 
@@ -24,7 +25,7 @@ Vagrant.configure("2") do |config|
     inline: "sudo -u vagrant ssh-keygen -f /home/vagrant/.ssh/id_rsa"
 
     server.vm.provision "shell",
-    inline: "sudo yum install -y ansible"
+    inline: "sudo apt-get install -y ansible"
 
     server.vm.provision "ansible_local" do |ansible|
       ansible.playbook = "playbooks/server-nfs-config.yml"
@@ -38,6 +39,7 @@ Vagrant.configure("2") do |config|
       ansible.playbook = "playbooks/server-openldap-config.yml"
     end
   end
+
 
   (1..1).each do |i|
 

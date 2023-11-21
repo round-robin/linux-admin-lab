@@ -7,38 +7,51 @@
       - name: Install the server package and other tools
         package:
           name: 
-            - openldap-servers
-            - openldap-clients
-          state: installed
+             - ldap-utils
+             - slapd
+          state: present
       
       - name: Purge the old config directory
         shell: 
-          cmd: rm -rf /etc/openldap/slapd.d/*
+          cmd: rm -rf /etc/ldap/slapd.d/*
 
       - name: Purge the old data directory
         shell: 
           cmd: rm -rf /var/lib/ldap/*
 
+      - name: Copy the config template
+        copy:
+          src: /vagrant/files/slapd-template.conf
+          dest: /etc/ldap/slapd.conf
+
       - name: Import the new configuration
         shell:
-          cmd: /sbin/slapadd -n 0 -F /etc/openldap/slapd.d -l /vagrant/files/slapd-template.ldif
+          cmd: /sbin/slaptest -n 0 -f /etc/ldap/slapd.conf -F /etc/ldap/slapd.d 
 
       - name: Change the config ownership to the LDAP user
         file:
-          path: /etc/openldap/slapd.d
-          owner: ldap
-          group: ldap
+          path: /etc/ldap/slapd.d
+          owner: openldap
+          group: openldap
           recurse: yes
+
+      - name: Create the certificate directory
+        file:
+          path: /etc/ldap/certs
+          owner: openldap
+          group: openldap
+          mode: '0774'
+          state: directory
 
       - name: Generate a private key for the LDAP server
         openssl_privatekey:
-          path: /etc/openldap/certs/ldap_server.key
+          path: /etc/ldap/certs/ldap_server.key
           state: present
 
       - name: Create a CSR for the LDAP server key
         openssl_csr:
-          path: /etc/openldap/certs/ldap_server.csr
-          privatekey_path: /etc/openldap/certs/ldap_server.key
+          path: /etc/ldap/certs/ldap_server.csr
+          privatekey_path: /etc/ldap/certs/ldap_server.key
           country_name: PL
           state_or_province_name: Slaskie
           locality_name: Katowice
@@ -48,7 +61,19 @@
 
       - name: Issue the LDAP server certificate signed with the Lab CA key
         shell:
-          cmd: openssl x509 -req -days 365 -CA /var/lib/ca/ca.crt -CAkey /var/lib/ca/ca.key -in /etc/openldap/certs/ldap_server.csr -out /etc/openldap/certs/ldap_server.crt
+          cmd: openssl x509 -req -days 365 -CA /var/lib/ca/ca.crt -CAkey /var/lib/ca/ca.key -in /etc/ldap/certs/ldap_server.csr -out /etc/ldap/certs/ldap_server.crt
+
+      - name: Copy the CA root certificate to the certificate directory of the LDAP server
+        copy:
+          src: /var/lib/ca/ca.crt
+          dest: /etc/ldap/certs/ca.crt
+
+      - name: Change the certificate directory ownership to the LDAP user
+        file:
+          path: /etc/ldap/certs
+          owner: openldap
+          group: openldap
+          recurse: yes
 
       - name: Copy the CA root certificate to the NFS share /lab-certs
         copy:
@@ -76,11 +101,4 @@
       - name: Set the LDAP user's password
         shell:
           cmd: ldappasswd -s linux123 -D 'cn=Manager,dc=example,dc=com' -w secret -x 'uid=ldapuser,ou=users,dc=example,dc=com'
-
-      - name: Open the firewall port 389 for LDAP
-        firewalld:
-          service: ldap
-          permanent: yes
-          immediate: yes
-          state: enabled
 
