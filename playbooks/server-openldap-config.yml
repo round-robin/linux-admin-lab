@@ -11,6 +11,12 @@
              - slapd
           state: present
       
+      - name: Stop the LDAP server
+        service:
+          name: slapd
+          enabled: yes
+          state: stopped
+
       - name: Purge the old config directory
         shell: 
           cmd: rm -rf /etc/ldap/slapd.d/*
@@ -21,12 +27,12 @@
 
       - name: Copy the config template
         copy:
-          src: /vagrant/files/slapd-template.conf
-          dest: /etc/ldap/slapd.conf
+          src: /vagrant/files/slapd.conf.stub
+          dest: /etc/ldap/slapd.conf.stub
 
       - name: Import the new configuration
         shell:
-          cmd: /sbin/slaptest -n 0 -f /etc/ldap/slapd.conf -F /etc/ldap/slapd.d 
+          cmd: /sbin/slaptest -n 0 -f /etc/ldap/slapd.conf.stub -F /etc/ldap/slapd.d 
 
       - name: Change the config ownership to the LDAP user
         file:
@@ -86,19 +92,23 @@
           enabled: yes
           state: started
 
+      - name: Create the monitor database
+        shell:
+          cmd: ldapadd -Y EXTERNAL -H ldapi:/// -f /vagrant/files/slapd-template-debian.ldif
+
       - name: Create the organization
         shell:
-          cmd: ldapadd -x -D 'cn=Manager,dc=example,dc=com' -w secret -f /vagrant/files/organization.ldif
+          cmd: ldapadd -Y EXTERNAL -H ldapi:/// -f /vagrant/files/organization.ldif
       
       - name: Create the containers
         shell:
-          cmd: ldapadd -x -D 'cn=Manager,dc=example,dc=com' -w secret -f /vagrant/files/containers.ldif
+          cmd: ldapadd -Y EXTERNAL -H ldapi:/// -f /vagrant/files/containers.ldif
 
       - name: Create an LDAP user
         shell:
-          cmd: ldapadd -x -D 'cn=Manager,dc=example,dc=com' -w secret -f /vagrant/files/ldapuser.ldif
+          cmd: ldapadd -Y EXTERNAL -H ldapi:/// -f /vagrant/files/ldapuser.ldif
 
       - name: Set the LDAP user's password
         shell:
-          cmd: ldappasswd -s linux123 -D 'cn=Manager,dc=example,dc=com' -w secret -x 'uid=ldapuser,ou=users,dc=example,dc=com'
+          cmd: ldappasswd -Y EXTERNAL -H ldapi:/// -s linux123 'uid=ldapuser,ou=users,dc=example,dc=com'
 

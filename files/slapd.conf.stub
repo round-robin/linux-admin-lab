@@ -1,0 +1,34 @@
+pidfile /var/run/slapd/slapd.pid
+
+# Schema and objectClass definitions
+include         /etc/ldap/schema/core.schema
+include         /etc/ldap/schema/cosine.schema
+include         /etc/ldap/schema/nis.schema
+include         /etc/ldap/schema/inetorgperson.schema
+
+# TLS Certificates
+TLSCACertificateFile  /etc/ldap/certs/ca.crt
+TLSCertificateFile    /etc/ldap/certs/ldap_server.crt
+TLSCertificateKeyFile /etc/ldap/certs/ldap_server.key
+
+allow bind_anon_cred
+sasl-secprops none
+
+modulepath  /usr/lib/ldap
+moduleload  back_mdb
+
+backend mdb
+
+database config
+access to * by dn.base="gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth" manage
+
+database mdb
+suffix "dc=example,dc=com"
+index     objectClass  eq
+index     cn,sn,mail   pres,eq,approx,sub
+
+#access to attrs=userPassword by self write by anonymous auth by * none
+#access to attrs=shadowLastChange by self write by * read
+#access to * by * read
+#access to * by self write by anonymous auth
+access to * by dn.base="gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth" manage by self write by * read
