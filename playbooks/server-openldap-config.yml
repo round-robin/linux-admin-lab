@@ -50,10 +50,22 @@
         shell:
           cmd: openssl x509 -req -days 365 -CA /var/lib/ca/ca.crt -CAkey /var/lib/ca/ca.key -in /etc/openldap/certs/ldap_server.csr -out /etc/openldap/certs/ldap_server.crt
 
+      - name: Copy the CA root certificate to the certificate directory of the LDAP server
+        copy:
+          src: /var/lib/ca/ca.crt
+          dest: /etc/openldap/certs/ca.crt
+
       - name: Copy the CA root certificate to the NFS share /lab-certs
         copy:
           src: /var/lib/ca/ca.crt
           dest: /lab-certs/ca.crt
+
+      - name: Change the certificate directory ownership to the LDAP user
+        file:
+          path: /etc/openldap/certs
+          owner: ldap
+          group: ldap
+          recurse: yes
 
       - name: Enable and start the LDAP server
         service:
