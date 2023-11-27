@@ -11,49 +11,58 @@
             - openldap-clients
           state: installed
       
-      - name: Copy the LDAP config template
-        copy:
-          src: /usr/share/openldap-servers/slapd.ldif
-          dest: /vagrant/files/slapd.ldif
-
-      - name: Rename the domain to example.com
-        replace:
-          path: /vagrant/files/slapd.ldif
-          regexp: my-domain
-          replace: example
-
-      - name: Enable the COSINE schema
-        lineinfile:
-          path: /vagrant/files/slapd.ldif
-          line: 'include: file:///etc/openldap/schema/cosine.ldif'
-          insertafter: 'include: file:///etc/openldap/schema/core.ldif'
-          state: present
-
-      - name: Enable the NIS schema
-        lineinfile:
-          path: /vagrant/files/slapd.ldif
-          line: 'include: file:///etc/openldap/schema/nis.ldif'
-          insertafter: 'include: file:///etc/openldap/schema/cosine.ldif'
-          state: present
-
-      - name: Configure the LDAP Manager's password
-        lineinfile:
-          path: /vagrant/files/slapd.ldif
-          line: 'olcRootPW: secret'
-          insertafter: 'olcRootDN: cn=Manager,dc=example,dc=com'
-          state: present
-
       - name: Purge the old config directory
         shell: 
           cmd: rm -rf /etc/openldap/slapd.d/*
 
+      - name: Purge the old data directory
+        shell: 
+          cmd: rm -rf /var/lib/ldap/*
+
       - name: Import the new configuration
         shell:
-          cmd: /sbin/slapadd -n 0 -F /etc/openldap/slapd.d -l /vagrant/files/slapd.ldif
+          cmd: /sbin/slapadd -n 0 -F /etc/openldap/slapd.d -l /vagrant/files/slapd-template.ldif
 
       - name: Change the config ownership to the LDAP user
         file:
           path: /etc/openldap/slapd.d
+          owner: ldap
+          group: ldap
+          recurse: yes
+
+      - name: Generate a private key for the LDAP server
+        openssl_privatekey:
+          path: /etc/openldap/certs/ldap_server.key
+          state: present
+
+      - name: Create a CSR for the LDAP server key
+        openssl_csr:
+          path: /etc/openldap/certs/ldap_server.csr
+          privatekey_path: /etc/openldap/certs/ldap_server.key
+          country_name: PL
+          state_or_province_name: Slaskie
+          locality_name: Katowice
+          organization_name: Linux Lab
+          common_name: server
+          state: present
+
+      - name: Issue the LDAP server certificate signed with the Lab CA key
+        shell:
+          cmd: openssl x509 -req -days 365 -CA /var/lib/ca/ca.crt -CAkey /var/lib/ca/ca.key -in /etc/openldap/certs/ldap_server.csr -out /etc/openldap/certs/ldap_server.crt
+
+      - name: Copy the CA root certificate to the certificate directory of the LDAP server
+        copy:
+          src: /var/lib/ca/ca.crt
+          dest: /etc/openldap/certs/ca.crt
+
+      - name: Copy the CA root certificate to the NFS share /lab-certs
+        copy:
+          src: /var/lib/ca/ca.crt
+          dest: /lab-certs/ca.crt
+
+      - name: Change the certificate directory ownership to the LDAP user
+        file:
+          path: /etc/openldap/certs
           owner: ldap
           group: ldap
           recurse: yes

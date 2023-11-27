@@ -1,0 +1,35 @@
+---
+  - name: Set up a Certification Authority for the lab
+    hosts: all
+    gather_facts: no
+    become: yes
+    tasks:
+
+      - name: Create a directory for the CA
+        file:
+          path: /var/lib/ca
+          state: directory
+          owner: root
+          group: root
+          mode: '0775'
+
+      - name: Generate a private key for the CA
+        openssl_privatekey:
+          path: /var/lib/ca/ca.key
+          state: present
+
+      - name: Generate a CSR for the CA
+        openssl_csr:
+          path: /var/lib/ca.csr
+          privatekey_path: /var/lib/ca/ca.key
+          country_name: PL
+          state_or_province_name: Slaskie
+          locality_name: Katowice
+          organization_name: Linux Lab CA
+          common_name: server
+          state: present
+
+      - name: Self-sign the CA certificate
+        shell: 
+          cmd: openssl x509 -req -days 365 -signkey /var/lib/ca/ca.key -in /var/lib/ca.csr -out /var/lib/ca/ca.crt
+

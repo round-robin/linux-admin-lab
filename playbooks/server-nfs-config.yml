@@ -26,6 +26,12 @@
           mode: '777'
           state: directory
 
+      - name: Create the certificate share mountpoint
+        file:
+          path: /lab-certs
+          mode: '777'
+          state: directory
+
       - name: Create the /etc/exports file
         template:
           src: /vagrant/templates/exports.j2
