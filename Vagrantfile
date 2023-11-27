@@ -41,9 +41,11 @@ Vagrant.configure("2") do |config|
   end
 
 
+
   (1..1).each do |i|
 
    config.vm.define "client-#{i}" do |client|
+   client.vm.box = "generic/rocky9"
 
       config.vm.provider "virtualbox" do |v|
       v.memory = 512
@@ -55,5 +57,5 @@ Vagrant.configure("2") do |config|
    client.vm.provision "shell",
    inline: "sudo /bin/bash /vagrant/scripts/generate-hosts.sh >> /etc/hosts"
    end
- end  #Configure all hosts as Rocky 9
+ end  #Configure all the clients as Rocky 9
 end  #End of the whole config
