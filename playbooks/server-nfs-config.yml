@@ -37,6 +37,13 @@
           src: /vagrant/templates/exports.j2
           dest: /etc/exports
 
+      - name: Open the firewall port 2049 for NFS
+        firewalld:
+          service: nfs
+          permanent: yes
+          immediate: yes
+          state: enabled
+
       - name: Start the NFS service
         service:
           name: nfs-server
